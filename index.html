@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Конструктор позовної заяви</title>
+    <!-- Підключення PWA маніфесту та мета-тегів для мобільних пристроїв -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f7f6; color: #333; line-height: 1.6; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; font-size: 24px; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h3 { color: #2c3e50; margin-top: 25px; border-left: 4px solid #3498db; padding-left: 10px; font-size: 18px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #34495e; font-size: 14px; }
+        input[type="text"], input[type="number"], input[type="date"], textarea, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; background-color: #fff; }
+        textarea { resize: vertical; height: 80px; }
+        .row { display: flex; gap: 15px; }
+        .col { flex: 1; }
+        .btn { display: block; width: 100%; background: #27ae60; color: white; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.3s; margin-top: 25px; }
+        .btn:hover { background: #219150; }
+        .btn-small { background: #3498db; color: white; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; margin-top: 5px; }
+        .btn-small:hover { background: #2980b9; }
+        .btn-danger { background: #e74c3c; color: white; border: none; padding: 10px 14px; border-radius: 6px; cursor: pointer; font-size: 16px; }
+        .btn-danger:hover { background: #c0392b; }
+        .attachment-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+        .checklist { background: #eef2f7; padding: 20px; border-radius: 8px; margin-top: 30px; border-left: 4px solid #e67e22; }
+        .checklist ul { padding-left: 20px; margin: 10px 0 0 0; }
+        .checklist li { margin-bottom: 8px; font-size: 14px; }
+        .court-preview { background: #f9f9f9; padding: 12px; border: 1px dashed #3498db; border-radius: 6px; margin-top: 10px; font-size: 13px; color: #555; }
+        .hidden { display: none; }
+        @media (max-width: 650px) {
+            body { padding: 10px; }
+            .container { padding: 18px; }
+            .row { flex-direction: column; gap: 0; }
+            h1 { font-size: 21px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>⚖️ Інтерактивний конструктор позовної заяви</h1>
+
+    <h3>🏛️ Вибір суду (Довідник адрес)</h3>
+    <div class="form-group">
+        <label for="courtSelect">Оберіть суд зі списку або виберіть «Інший суд»</label>
+        <select id="courtSelect">
+            <option value="darnytsia">Дарницький районний суд міста Києва</option>
+            <option value="desna">Деснянський районний суд міста Києва</option>
+            <option value="dnipro">Дніпровський районний суд міста Києва</option>
+            <option value="holosiyiv">Голосіївський районний суд міста Києва</option>
+            <option value="obolon">Оболонський районний суд міста Києва</option>
+            <option value="pechersk">Печерський районний суд міста Києва</option>
+            <option value="podil">Подільський районний суд міста Києва</option>
+            <option value="solomyanka">Солом'янський районний суд міста Києва</option>
+            <option value="svyato">Святошинський районний суд міста Києва</option>
+            <option value="shevchenko">Шевченківський районний суд міста Києва</option>
+            <option value="other">-- ІНШИЙ СУД --</option>
+        </select>
+    </div>
+
+    <div id="customCourtBlock" class="hidden">
+        <div class="form-group">
+            <label for="customCourtName">Назва вашого суду</label>
+            <input type="text" id="customCourtName" placeholder="Наприклад: Чернігівський районний суд Чернігівської області">
+        </div>
+        <div class="form-group">
+            <label for="customCourtAddress">Юридична адреса суду</label>
+            <input type="text" id="customCourtAddress" placeholder="Наприклад: вул. Хрещатик, 10, м. Місто, 12345">
+        </div>
+    </div>
+
+    <div class="court-preview" id="courtPreview">
+        <b>Вибрано для позову:</b> <span id="previewText"></span>
+    </div>
+
+    <h3>👤 1. Дані Позивача (Водія)</h3>
+    <div class="row">
+        <div class="col form-group">
+            <label for="driverName">Ваше ПІБ повністю</label>
+            <input type="text" id="driverName" placeholder="Іванов Іван Іванович">
+        </div>
+        <div class="col form-group">
+            <label for="driverInn">ІПН (Податковий номер)</label>
+            <input type="text" id="driverInn" placeholder="1234567890">
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="driverAddress">Адреса проживання / реєстрації</label>
+        <input type="text" id="driverAddress" placeholder="м. Київ, вул. Хрещатик, буд. 1, кв. 5">
+    </div>
+    <div class="row">
+        <div class="col form-group">
+            <label for="driverPhone">Номер телефону</label>
+            <input type="text" id="driverPhone" value="+380" placeholder="+380XXXXXXXXX">
+        </div>
+        <div class="col form-group">
+            <label for="driverEmail">Електронна пошта</label>
+            <input type="text" id="driverEmail" placeholder="your@email.com">
+        </div>
+    </div>
+
+    <h3>👮 2. Дані працівника поліції, який виніс постанову / склав протокол</h3>
+    <div class="row">
+        <div class="col form-group">
+            <label for="copName">ПІБ інспектора поліції</label>
+            <input type="text" id="copName" placeholder="Петренко Петро Петрович">
+        </div>
+        <div class="col form-group">
+            <label for="copBadge">Номер службового посвідчення (жетона)</label>
+            <input type="text" id="copBadge" placeholder="001234">
+        </div>
+    </div>
+
+    <h3>📂 3. Дані про закриту справу</h3>
+    <div class="row">
+        <div class="col form-group">
+            <label for="lawArticle">Стаття КУпАП/ККУ</label>
+            <input type="text" id="lawArticle" placeholder="Наприклад: 130 ч. 1">
+        </div>
+        <div class="col form-group">
+            <label for="closingCourtSelect">Який суд закрив справу?</label>
+            <select id="closingCourtSelect">
+                <option value="darnytsia">Дарницький районний суд міста Києва</option>
+                <option value="desna">Деснянський районний суд міста Києва</option>
+                <option value="dnipro">Дніпровський районний суд міста Києва</option>
+                <option value="holosiyiv">Голосіївський районний суд міста Києва</option>
+                <option value="obolon">Оболонський районний суд міста Києва</option>
+                <option value="pechersk">Печерський районний суд міста Києва</option>
+                <option value="podil">Подільський районний суд міста Києва</option>
+                <option value="solomyanka">Солом'янський районний суд міста Києва</option>
+                <option value="svyato">Святошинський районний суд міста Києва</option>
+                <option value="shevchenko">Шевченківський районний суд міста Києва</option>
+                <option value="other">-- ІНШИЙ СУД --</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="customClosingCourtBlock" class="hidden">
+        <div class="form-group">
+            <label for="customClosingCourtName">Назва іншого суду</label>
+            <input type="text" id="customClosingCourtName" placeholder="Наприклад: Чернігівський районний суд Чернігівської області">
+        </div>
+        <div class="form-group">
+            <label for="customClosingCourtAddress">Адреса іншого суду</label>
+            <input type="text" id="customClosingCourtAddress" placeholder="Наприклад: вул. Шевченка, 10, м. Чернігів, 14000">
+        </div>
+    </div>
+
+    <div class="court-preview" id="closingCourtPreview">
+        <b>Обраний суд:</b> <span id="closingCourtPreviewText"></span>
+    </div>
+
+    <div class="row" style="margin-top: 15px;">
+        <div class="col form-group">
+            <label for="caseNumber">Номер справи (з постанови)</label>
+            <input type="text" id="caseNumber" placeholder="761/12345/26">
+        </div>
+        <div class="col form-group">
+            <label for="caseDate">Дата постанови про закриття</label>
+            <input type="date" id="caseDate">
+        </div>
+    </div>
+
+    <h3>📅 4. Дата подачі заяви</h3>
+    <div class="form-group">
+        <label for="docDate">Дата складання / підписання позову</label>
+        <input type="date" id="docDate">
+    </div>
+
+    <h3>📹 5. Докази та свідки</h3>
+    <div class="form-group">
+        <label for="bodyCams">Відеозаписи / інші докази (наприклад, відео з реєстратора)</label>
+        <input type="text" id="bodyCams" placeholder="Наприклад: відеозапис з персонального відеореєстратора / камери спостереження">
+    </div>
+    <div class="form-group">
+        <label for="witnesses">Дані свідків (якщо були в авто чи поруч)</label>
+        <textarea id="witnesses" placeholder="Наприклад: Сидоров А.А. (пасажир), який підтверджує відсутність події правопорушення..."></textarea>
+    </div>
+
+    <h3>📎 6. Перелік додатків (що додаються до позову)</h3>
+    <div id="attachmentsContainer">
+        <!-- Динамічні рядки додатків -->
+    </div>
+    <button type="button" class="btn-small" id="addAttachmentBtn">+ Додати додаток</button>
+
+    <h3>💰 7. Фінансові вимоги (Розрахунок збитків)</h3>
+    <div class="row">
+        <div class="col form-group">
+            <label for="costAdvocate">Витрати на адвоката (грн)</label>
+            <input type="number" id="costAdvocate" value="0" min="0" step="0.01">
+        </div>
+        <div class="col form-group">
+            <label for="costEvacuator">Евакуатор / Штрафмайданчик (грн)</label>
+            <input type="number" id="costEvacuator" value="0" min="0" step="0.01">
+        </div>
+        <div class="col form-group">
+            <label for="costMoral">Моральна шкода (грн)</label>
+            <input type="number" id="costMoral" value="15000" min="0" step="0.01">
+        </div>
+    </div>
+
+    <button class="btn" id="generateButton" type="button">📥 Згенерувати позов у форматі .TXT (Текст)</button>
+
+    <div class="checklist">
+        <strong>⚠️ Перед подачею перевірте:</strong>
+        <ul>
+            <li>Правильність назви суду, його адреси та підсудності.</li>
+            <li>Реквізити відповідачів і казначейства за актуальними офіційними даними.</li>
+            <li>Підстави для сплати чи звільнення від сплати судового збору.</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+'use strict';
+
+const courtDatabase = {
+    darnytsia: { name: "Дарницький районний суд міста Києва", address: "вул. Олександра Кошиця, 5-А, м. Київ, 02068" },
+    desna: { name: "Деснянський районний суд міста Києва", address: "проспект Червоної Калини, 5-В, м. Київ, 02225" },
+    dnipro: { name: "Дніпровський районний суд міста Києва", address: "вул. Пластова, 3, м. Київ, 02105" },
+    holosiyiv: { name: "Голосіївський районний суд міста Києва", address: "вул. Виставкова, 14-А, м. Київ, 03127" },
+    obolon: { name: "Оболонський районний суд міста Києва", address: "вул. Левка Лук'яненка, 2-Є, м. Київ, 04212" },
+    pechersk: { name: "Печерський районний суд міста Києва", address: "вул. Володимирська, 15, м. Київ, 01601" },
+    podil: { name: "Подільський районний суд міста Києва", address: "вул. Хорива, 21, м. Київ, 04071" },
+    solomyanka: { name: "Солом'янський районний суд міста Києва", address: "вул. Максима Кривоноса, 25, м. Київ, 03037" },
+    svyato: { name: "Святошинський районний суд міста Києва", address: "вул. Якуба Коласа, 27-А, м. Київ, 03148" },
+    shevchenko: { name: "Шевченківський районний суд міста Києва", address: "вул. Дегтярівська, 31-А, м. Київ, 04057" }
+};
+
+const $ = (id) => document.getElementById(id);
+
+// Початкові стандартні додатки
+const defaultAttachments = [
+    { name: "Копія постанови суду про закриття провадження", copies: "1 прим." },
+    { name: "Копія позовної заяви та додатків для відповідачів", copies: "2 прим." },
+    { name: "Докази понесенх витрат (квитанції, договори)", copies: "1 прим." }
+];
+
+function renderAttachments() {
+    const container = $("attachmentsContainer");
+    container.innerHTML = "";
+    defaultAttachments.forEach((att, index) => {
+        const row = document.createElement("div");
+        row.className = "attachment-row";
+        row.innerHTML = `
+            <input type="text" class="att-name" value="${att.name}" placeholder="Назва документа" style="flex: 3;">
+            <input type="text" class="att-copies" value="${att.copies}" placeholder="Кількість (напр. 1 прим.)" style="flex: 1;">
+            <button type="button" class="btn-danger" onclick="removeAttachment(${index})">✕</button>
+        `;
+        container.appendChild(row);
+    });
+}
+
+function addAttachment() {
+    defaultAttachments.push({ name: "", copies: "1 прим." });
+    renderAttachments();
+}
+
+function removeAttachment(index) {
+    defaultAttachments.splice(index, 1);
+    renderAttachments();
+}
+
+$("addAttachmentBtn").addEventListener("click", addAttachment);
+
+// Автоматичне перетворення перших літер слів у великі для полів ПІБ
+function capitalizeWords(str) {
+    return str.replace(/(^|\s)\S/g, (l) => l.toUpperCase());
+}
+
+$("driverName").addEventListener("input", function(e) {
+    const start = this.selectionStart;
+    const end = this.selectionEnd;
+    this.value = capitalizeWords(this.value);
+    this.setSelectionRange(start, end);
+});
+
+$("copName").addEventListener("input", function(e) {
+    const start = this.selectionStart;
+    const end = this.selectionEnd;
+    this.value = capitalizeWords(this.value);
+    this.setSelectionRange(start, end);
+});
+
+// Фіксація префіксу +380 для поля телефону
+$("driverPhone").addEventListener("input", function(e) {
+    if (!this.value.startsWith("+380")) {
+        this.value = "+380" + this.value.replace(/^\+?3?8?0?/, '');
+    }
+});
+
+function setDefaultDates() {
+    const today = new Date().toISOString().split('T')[0];
+    if (!$("docDate").value) $("docDate").value = today;
+    if (!$("caseDate").value) $("caseDate").value = today;
+}
+
+function formatDateUA(dateString) {
+    if (!dateString) return "[дд.мм.рррр]";
+    const parts = dateString.split("-");
+    if (parts.length === 3) {
+        return `${parts[2]}.${parts[1]}.${parts[0]}`;
+    }
+    return dateString;
+}
+
+function handleCourtChange() {
+    const selectValue = $("courtSelect").value;
+    const customBlock = $("customCourtBlock");
+    if (selectValue === "other") {
+        customBlock.classList.remove("hidden");
+    } else {
+        customBlock.classList.add("hidden");
+    }
+    updateCourtPreview();
+}
+
+function getCourtData() {
+    const selectValue = $("courtSelect").value;
+    if (selectValue === "other") {
+        return {
+            name: $("customCourtName").value.trim() || "[Назва суду]",
+            address: $("customCourtAddress").value.trim() || "[Адреса суду]"
+        };
+    }
+    return courtDatabase[selectValue] || { name: "[Назва суду]", address: "[Адреса суду]" };
+}
+
+function updateCourtPreview() {
+    const selectValue = $("courtSelect").value;
+    if (selectValue === "other") {
+        const name = $("customCourtName").value.trim();
+        const address = $("customCourtAddress").value.trim();
+        $("previewText").textContent = (name || "[Назва суду]") + " (" + (address || "[Адреса суду]") + ")";
+    } else {
+        const court = getCourtData();
+        $("previewText").textContent = court.name + " (" + court.address + ")";
+    }
+}
+
+function updateClosingCourtPreview() {
+    const value = $("closingCourtSelect").value;
+    const customBlock = $("customClosingCourtBlock");
+
+    if (value === "other") {
+        customBlock.classList.remove("hidden");
+        const name = $("customClosingCourtName").value.trim();
+        const address = $("customClosingCourtAddress").value.trim();
+        $("closingCourtPreviewText").textContent = (name || "[Назва суду]") + " (" + (address || "[Адреса суду]") + ")";
+    } else {
+        customBlock.classList.add("hidden");
+        const court = courtDatabase[value] || { name: "[Суд]", address: "[Адреса]" };
+        $("closingCourtPreviewText").textContent = court.name + " (" + court.address + ")";
+    }
+}
+
+function getValue(id, fallback) {
+    const value = $(id).value.trim();
+    return value || fallback;
+}
+
+function formatMoney(value) {
+    return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(".", ",");
+}
+
+function generateDocument() {
+    const court = getCourtData();
+
+    const name = getValue("driverName", "[ПІБ Позивача]");
+    const inn = getValue("driverInn", "[ІПН]");
+    const addr = getValue("driverAddress", "[Адреса Позивача]");
+    const phone = getValue("driverPhone", "[Телефон]");
+    const email = getValue("driverEmail", "[Емейл]");
+    
+    const copName = getValue("copName", "[ПІБ інспектора]");
+    const copBadge = getValue("copBadge", "[номер жетона]");
+
+    const article = getValue("lawArticle", "[Стаття]");
+    
+    const closingCourtSelect = $("closingCourtSelect").value;
+    const closingCourtData = closingCourtSelect === "other"
+        ? {
+            name: getValue("customClosingCourtName", "[Суд, що закрив справу]"),
+            address: getValue("customClosingCourtAddress", "[Адреса суду]")
+        }
+        : (courtDatabase[closingCourtSelect] || {
+            name: "[Суд, що закрив справу]",
+            address: "[Адреса суду]"
+        });
+
+    const caseNum = getValue("caseNumber", "[Номер справи]");
+    const caseDateFormatted = formatDateUA($("caseDate").value);
+    const docDateFormatted = formatDateUA($("docDate").value);
+
+    const bodyCams = getValue("bodyCams", "наявними у справі матеріалами та відеозаписами");
+    const witnessesText = $("witnesses").value.trim();
+
+    const adv = Math.max(0, Number($("costAdvocate").value) || 0);
+    const evac = Math.max(0, Number($("costEvacuator").value) || 0);
+    const moral = Math.max(0, Number($("costMoral").value) || 0);
+    const totalMaterial = adv + evac;
+
+    let witnessSection = "";
+    if (witnessesText) {
+        witnessSection = "\n\nОбставини відсутності в моїх діях складу правопорушення також підтверджуються показами свідків, а саме: " + witnessesText + ".";
+    }
+
+    const attNames = document.querySelectorAll(".att-name");
+    const attCopies = document.querySelectorAll(".att-copies");
+    let attachmentsList = [];
+    for (let i = 0; i < attNames.length; i++) {
+        const aName = attNames[i].value.trim();
+        const aCopies = attCopies[i].value.trim();
+        if (aName) {
+            attachmentsList.push(`${i + 1}. ${aName} — ${aCopies || '1 прим.'}`);
+        }
+    }
+    const attachmentsText = attachmentsList.length > 0 ? attachmentsList.join("\n") : "Відсутні";
+
+    const textContent = `
+До ${court.name}
+Адреса: ${court.address}
+
+Позивач: ${name}
+РНОКПП (ІПН): ${inn}
+Адреса проживання: ${addr}
+Тел: ${phone}, Емейл: ${email}
+
+Відповідач 1: Головне управління Національної поліції
+Відповідач 2: Державна казначейська служба України (м. Київ, вул. Бастіонна, 6)
+
+
+                             ПОЗОВНА ЗАЯВА
+     про відшкодування моральної та матеріальної шкоди, завданої незаконними рішеннями та діями органів влади
+
+
+Працівником патрульної поліції (${copName}, жетон № ${copBadge}) відносно мене було безпідставно винесено постанову (складено матеріали) за статтею ${article} КУпАП.
+
+Постановою суду від ${caseDateFormatted} р. у справі № ${caseNum} (${closingCourtData.name}, ${closingCourtData.address}) провадження у справі відносно мене було закрите у зв'язку з відсутністю в моїх діях складу адміністративного правопорушення. Зазначена постанова суду набрала законної сили.
+
+Судовим розглядом та дослідженими доказами, зокрема (${bodyCams}), повністю спростовано вину та доведено відсутність будь-якого правопорушення з мого боку. Незаконне притягнення до адміністративної відповідальності та подальша необхідність захищати свої права в суді призвели до порушення мого нормального життєвого укладу та завдання матеріальних і моральних збитків.${witnessSection}
+
+Завдана мені шкода складає:
+1. Матеріальна шкода: ${formatMoney(totalMaterial)} грн. (в т.ч. витрати на правову допомогу адвоката — ${formatMoney(adv)} грн., евакуатор/транспортні витрати — ${formatMoney(evac)} грн.)
+2. Моральна шкода: ${formatMoney(moral)} грн., яка полягає у перенесеному стресі, душевних стражданнях через неправомірні дії посадової особи поліції, витрачанні часу та зусиль на судові процеси.
+
+Згідно зі ст. 56 Конституції України, ст. 1174, 1191 ЦК України, шкода, завдана фізичній особі незаконними рішеннями, діями чи бездіяльністю органу державної влади або його посадової особи при здійсненні ними повноважень, відшкодовується державою незалежно від вини посадових осіб. Відповідно до п. 13 ч. 1 ст. 5 Закону України «Про судовий збір», позивачі звільнені від сплати судового збору у спорах щодо відшкодування шкоди.
+
+ПРОШУ СУД:
+1. Стягнути з Державного бюджету України (шляхом списання з єдиного казначейського рахунку Державної казначейської служби України) на користь ${name} матеріальну шкоду в розмірі ${formatMoney(totalMaterial)} грн.
+2. Стягнути з Державного бюджету України на користь ${name} моральну шкоду в розмірі ${formatMoney(moral)} грн.
+
+ДОДАТКИ:
+${attachmentsText}
+
+
+Дата: ${docDateFormatted} р.                         Підпис: _________________ (${name})
+    `.trim();
+
+    const blob = new Blob(['\ufeff' + textContent], {
+        type: 'text/plain;charset=utf-8'
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "Pozovna_Zayava_do_Sudu.txt";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// Ініціалізація подій
+$("courtSelect").addEventListener("change", handleCourtChange);
+$("customCourtName").addEventListener("input", updateCourtPreview);
+$("customCourtAddress").addEventListener("input", updateCourtPreview);
+
+$("closingCourtSelect").addEventListener("change", updateClosingCourtPreview);
+$("customClosingCourtName").addEventListener("input", updateClosingCourtPreview);
+$("customClosingCourtAddress").addEventListener("input", updateClosingCourtPreview);
+
+$("generateButton").addEventListener("click", generateDocument);
+
+// Початкові налаштування при завантаженні сторінки
+setDefaultDates();
+renderAttachments();
+updateCourtPreview();
+updateClosingCourtPreview();
+</script>
+</body>
+</html>
